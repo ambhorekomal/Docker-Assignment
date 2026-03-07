@@ -126,7 +126,7 @@ The Docker image is pushed to AWS ECR.
 Example repository URI:
 
 ```
-603366204775.dkr.ecr.eu-north-1.amazonaws.com/hello-world
+add Your url here
 ```
 
 ---
