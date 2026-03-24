@@ -1,66 +1,47 @@
 name: Push Docker Image to ECR
 
 on:
-
   push:
-
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-
-  build:
-
+  build-and-push:
     runs-on: ubuntu-latest
-
     steps:
-
-      - name: Checkout code
-
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Configure AWS credentials
-
         uses: aws-actions/configure-aws-credentials@v2
-
         with:
-
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
-
         id: login-ecr
-
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push Docker image
-
+      - name: Create ECR repository if not exists
         env:
-
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-
-          REPOSITORY: hello-world
-
-          IMAGE_TAG: ${{ github.sha }}
-
+          ECR_REPOSITORY: hello-world
+          AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
+          aws ecr describe-repositories --repository-names $ECR_REPOSITORY --region $AWS_REGION || aws ecr create-repository --repository-name $ECR_REPOSITORY --region $AWS_REGION
 
+      - name: Build, tag, and push Docker image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: hello-world
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
 
       - name: Output image URI
-
         env:
-
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-
           REPOSITORY: hello-world
-
           IMAGE_TAG: ${{ github.sha }}
-
         run: echo "Image pushed -> $REGISTRY/$REPOSITORY:$IMAGE_TAG"
- 
